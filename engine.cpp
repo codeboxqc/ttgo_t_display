@@ -12,8 +12,8 @@ extern void displayMessage(String message, uint16_t color);
 
 
 // Telegram constants
-const char* BOT_TOKEN = "REALDUMMY";
-const char* CHAT_ID = "-DUMMY";
+const char* BOT_TOKEN = "*************";
+const char* CHAT_ID = "*******";
 
 // RSS feed URLs
 const char* rssFeeds[] = {
