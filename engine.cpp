@@ -12,9 +12,8 @@ extern void displayMessage(String message, uint16_t color);
 
 
 // Telegram constants
-const char* BOT_TOKEN = "*************";
-const char* CHAT_ID = "*******";
-
+const char* BOT_TOKEN = "**********************";
+const char* CHAT_ID =  "**********************";
 // RSS feed URLs
 const char* rssFeeds[] = {
   "https://lapresse.ca/actualites/rss",
@@ -133,7 +132,7 @@ void postToTelegram(const String& title, const String& link) {
   int httpCode = https.GET();
 
   if (httpCode == 200) {
-    displayMessage("Telegram: OK", TFT_GREEN);
+    displayMessage("TeGram OK", TFT_OLIVE);
   } else {
     displayMessage("Telegram: Error " + String(httpCode), TFT_RED);
   }
@@ -212,7 +211,7 @@ void fetchRSSFeed(const char* url, size_t maxItems = 13) {
   int startPos = urlStr.indexOf("://") + 3;
   int endPos = urlStr.indexOf("/", startPos);
   String domain = urlStr.substring(startPos, endPos);
-  displayMessage("Fetching: " + domain, TFT_YELLOW);
+  displayMessage("Fetch>" + domain, TFT_YELLOW);
 
   WiFiClientSecure client;
   client.setInsecure(); // Skip certificate verification
@@ -292,7 +291,7 @@ void fetchRSSFeed(const char* url, size_t maxItems = 13) {
 
     if (title.length() > 0 && link.length() > 0) {
       String displayTitle = title.length() > 40 ? title.substring(0, 37) + "..." : title;
-      displayMessage("Item " + String(itemCount + 1) + ": " + displayTitle, TFT_WHITE);
+      displayMessage("POST:" + String(itemCount + 1) + ": " + displayTitle, TFT_DARKGREEN);
       postToTelegram(title, link);
       itemCount++;
     }

@@ -12,14 +12,14 @@ const char* timezone = "EST5EDT,M3.2.0,M11.1.0"; // New York time
 #define RUN_HOUR 3
 #define RUN_MINUTE 0
 #define WAKE_WINDOW_HOUR 2
-#define WAKE_WINDOW_MINUTE 58
+#define WAKE_WINDOW_MINUTE 45
 
 TFT_eSPI tft = TFT_eSPI();
 #define TFT_BL 32
 #define TEXT_SIZE 2
 
-const char* ssid = "*******";
-const char* password = "***********";
+const char* ssid =  "**********************";
+const char* password = " "**********************";
 
 // -------------------- Globals --------------------
 #define FONT_HEIGHT 8
@@ -77,10 +77,10 @@ bool syncTime() {
     delay(1000);
     struct tm timeinfo;
     if (getLocalTime(&timeinfo)) {
-        displayMessage("Time synced (NTP)", TFT_GREEN);
+        displayMessage("Synced Ok", TFT_GREEN);
         return true;
     } else {
-        displayMessage("NTP failed, trying HTTP...", TFT_ORANGE);
+        displayMessage("NTP failed!", TFT_RED);
         return getTimeFromHTTP();
     }
 }
@@ -100,7 +100,7 @@ bool getTimeFromHTTP() {
             if (strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S", &tm)) {
                 timeval now = { mktime(&tm), 0 };
                 settimeofday(&now, NULL);
-                displayMessage("Time synced (HTTP)", TFT_GREEN);
+                displayMessage("Done.", TFT_MAGENTA);
                 http.end();
                 return true;
             }
@@ -116,9 +116,11 @@ void setup() {
     Serial.begin(115200);
     delay(1000);
 
+    // Always reset to 0 on cold boot
     EEPROM.begin(4);
-    lastProcessedDay = EEPROM.read(0);
-    if (lastProcessedDay < 0 || lastProcessedDay > 31) lastProcessedDay = -1;
+    lastProcessedDay = 0;
+    EEPROM.write(0, lastProcessedDay);
+    EEPROM.commit();
 
     pinMode(TFT_BL, OUTPUT);
     digitalWrite(TFT_BL, HIGH);
@@ -130,31 +132,34 @@ void setup() {
     tft.setTextSize(TEXT_SIZE);
     tft.setCursor(0, 0);
 
-    displayMessage("RSS to Telegram Bot", TFT_CYAN);
-    displayMessage("Version 1.0", TFT_WHITE);
-    delay(2000);
+    displayMessage("RssBotGram", TFT_GREENYELLOW);
+    displayMessage("V1.0", TFT_VIOLET);
+    delay(6000);
 
     if (!connectWiFi()) {
-        displayMessage("No WiFi - Halting", TFT_RED);
+        displayMessage("No WiFi Halting", TFT_RED);
         while (true) { delay(1000); yield(); }
     }
 
     if (!syncTime()) {
-        displayMessage("Time Sync Failed!", TFT_RED);
+        displayMessage("Time Failed!", TFT_RED);
     } else {
         struct tm timeinfo;
         if (getLocalTime(&timeinfo)) {
             char buf[64];
-            strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", &timeinfo);
-            String msg = "Current Time: " + String(buf);
-            displayMessage(msg, TFT_GREEN);
+            strftime(buf, sizeof(buf), "%Y-%m-%d", &timeinfo);
+            String msg = "" + String(buf);
+            displayMessage(msg, TFT_WHITE);
             Serial.println(msg);
-            delay(2000);
+            delay(4000);
         }
     }
 
-    displayMessage("Ready", TFT_GREEN);
+    displayMessage("Ready", TFT_SILVER);
     delay(500);
+     char buffer[16];   
+     sprintf(buffer, "Begin AT:%02d ", RUN_HOUR );     
+     displayMessage(buffer, TFT_PURPLE);
     
 }
 
@@ -162,12 +167,17 @@ void setup() {
 void loop() {
     static bool firstLoopMessage = true;
     static bool graceMessageShown = false;
-    static bool wifiEnabled = true;
+    static bool wifiEnabled = false;
+     char buffer[16];
+     struct tm timeinfo;
+    /// int hours = timeinfo.tm_hour;
+    // int minutes = timeinfo.tm_min;
+    // int seconds = timeinfo.tm_sec;
 
     // Get current local time
-    struct tm timeinfo;
+    
     if (!getLocalTime(&timeinfo)) {
-        displayMessage("Time sync failed, retrying...", TFT_RED);
+        displayMessage("Time sync failed ", TFT_RED);
         int retries = 5;
         while (retries-- > 0 && !getLocalTime(&timeinfo)) {
             if (!wifiEnabled) {
@@ -179,84 +189,60 @@ void loop() {
             delay(1000);
         }
         if (!getLocalTime(&timeinfo)) {
-            displayMessage("Time sync failed, retry in 1 min", TFT_RED);
+            displayMessage("Time sync failed", TFT_RED);
             delay(60000);
             return;
         }
     }
 
-    int hours = timeinfo.tm_hour;
-    int minutes = timeinfo.tm_min;
-    int seconds = timeinfo.tm_sec;
+     //hours = timeinfo.tm_hour;
+    // minutes = timeinfo.tm_min;
+    // seconds = timeinfo.tm_sec;
 
-    // Debug output
-    Serial.printf("Time: %02d:%02d:%02d, Day: %d, LastProcessedDay: %d, WiFi: %s\n",
-                  hours, minutes, seconds, timeinfo.tm_mday, lastProcessedDay,
-                  wifiEnabled ? "Enabled" : "Disabled");
+    
+ 
 
-    // Manage WiFi: enable only near RSS window or if needed for sync
-    if (hours == WAKE_WINDOW_HOUR && minutes >= WAKE_WINDOW_MINUTE || hours == RUN_HOUR && minutes <= 5) {
-        if (!wifiEnabled) {
-            WiFi.mode(WIFI_STA);
-            if (connectWiFi()) wifiEnabled = true;
-        }
-    } else if (wifiEnabled) {
-        WiFi.disconnect();
+    
+    // sprintf(buffer, "%02d:%02d  %02d:%02d", timeinfo.tm_hour ,RUN_HOUR,lastProcessedDay,timeinfo.tm_mday );     
+    //  displayMessage(buffer, TFT_BROWN);
+    // delay(10000);
+    // Run RSS feeds  
+   
+    if (timeinfo.tm_hour == RUN_HOUR && lastProcessedDay != timeinfo.tm_mday) {
+    displayMessage("Run RSS feeds", TFT_GREEN);
+    lastProcessedDay = timeinfo.tm_mday;   // remember day
+    EEPROM.write(0, lastProcessedDay);     // save to EEPROM
+    EEPROM.commit();
+    processRSSFeeds();  // your function
+    displayMessage("EndRss.", TFT_SKYBLUE);
+    delay(1000);
+    displayMessage("<Idle>", TFT_BLUE);
+    }
+
+   
+    //lastProcessedDay == timeinfo.tm_mday && 
+    //if(timeinfo.tm_hour != RUN_HOUR) { 
+        //displayMessage(">", TFT_BLUE);
+        sprintf(buffer, ">%02d:%02d", timeinfo.tm_hour, timeinfo.tm_min );
+        tft.println(buffer);
+
+         WiFi.disconnect();
         WiFi.mode(WIFI_OFF);
         wifiEnabled = false;
-        displayMessage("WiFi disabled to save power", TFT_BLUE);
-    }
+      
+       if(timeinfo.tm_hour == RUN_HOUR && lastProcessedDay == timeinfo.tm_mday) {
+        esp_sleep_enable_timer_wakeup(60 * 60 * 1000000ULL); }
+       //60 minutes sleep
+        else  esp_sleep_enable_timer_wakeup(15 * 60 * 1000000ULL);
 
-    // Ensure WiFi if needed
-    if (wifiEnabled && WiFi.status() != WL_CONNECTED) {
-        displayMessage("WiFi lost, reconnecting...", TFT_ORANGE);
-        connectWiFi();
-        if (WiFi.status() != WL_CONNECTED) {
-            displayMessage("WiFi reconnect failed, retry in 30s", TFT_RED);
-            delay(30000);
-            return;
-        }
-    }
-
-    // Run RSS feeds ONCE per day at 16:00–16:05
-    if (hours == RUN_HOUR && minutes >= 0 && minutes <= 5 && lastProcessedDay != timeinfo.tm_mday) {
-        displayMessage("Running RSS feeds (4 PM)", TFT_GREEN);
-        processRSSFeeds();
-        lastProcessedDay = timeinfo.tm_mday;
-        EEPROM.write(0, lastProcessedDay);
-        EEPROM.commit();
-    }
-
-    // First boot grace period: stay awake for 6 minutes
-    if (firstBootGracePeriod(6)) {
-        if (!graceMessageShown) {
-            displayMessage("First boot: staying awake for 6 min", TFT_BLUE);
-            graceMessageShown = true;
-        }
-        delay(60000); // Full power during grace period
-    }
-    // Stay awake near RSS window (15:55–16:05)
-    else if (hours == WAKE_WINDOW_HOUR && minutes >= WAKE_WINDOW_MINUTE || hours == RUN_HOUR && minutes <= 5) {
-        displayMessage("Staying awake for RSS window", TFT_BLUE);
-        delay(30000); // Check every 30 seconds
-    }
-    // Low-power mode: light sleep outside RSS window
-    else {
-        displayMessage("Entering light sleep for 30s...", TFT_BLUE);
-        Serial.flush();
-        esp_sleep_enable_timer_wakeup(30 * 1000000ULL); // 30 seconds
+       // 15 minutes deep sleep
+       
         esp_light_sleep_start();
 
         digitalWrite(TFT_BL, HIGH); // Restore backlight after wake
+     // }
+
+
+}
 
  
-
-    }
-}
-
-// -------------------- Grace Period --------------------
-bool firstBootGracePeriod(int minutes) {
-    static unsigned long bootTime = millis();
-    unsigned long elapsedMs = millis() - bootTime;
-    return elapsedMs < (minutes * 60 * 1000UL); // Correct: milliseconds
-}
