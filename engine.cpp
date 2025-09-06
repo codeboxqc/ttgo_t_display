@@ -12,8 +12,9 @@ extern void displayMessage(String message, uint16_t color);
 
 
 // Telegram constants
-const char* BOT_TOKEN = "**********************";
-const char* CHAT_ID =  "**********************";
+const char* BOT_TOKEN = "***************************";
+const char* CHAT_ID = "***************************";
+
 // RSS feed URLs
 const char* rssFeeds[] = {
   "https://lapresse.ca/actualites/rss",

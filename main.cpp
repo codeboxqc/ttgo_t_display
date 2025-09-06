@@ -18,8 +18,8 @@ TFT_eSPI tft = TFT_eSPI();
 #define TFT_BL 32
 #define TEXT_SIZE 2
 
-const char* ssid =  "**********************";
-const char* password = " "**********************";
+const char* ssid = "***************************";
+const char* password = "***************************";
 
 // -------------------- Globals --------------------
 #define FONT_HEIGHT 8
@@ -208,7 +208,7 @@ void loop() {
     // delay(10000);
     // Run RSS feeds  
    
-    if (timeinfo.tm_hour == RUN_HOUR && lastProcessedDay != timeinfo.tm_mday) {
+    if (timeinfo.tm_hour >= RUN_HOUR && lastProcessedDay != timeinfo.tm_mday) {
     displayMessage("Run RSS feeds", TFT_GREEN);
     lastProcessedDay = timeinfo.tm_mday;   // remember day
     EEPROM.write(0, lastProcessedDay);     // save to EEPROM
@@ -231,15 +231,34 @@ void loop() {
         wifiEnabled = false;
       
        if(timeinfo.tm_hour == RUN_HOUR && lastProcessedDay == timeinfo.tm_mday) {
-        esp_sleep_enable_timer_wakeup(60 * 60 * 1000000ULL); }
+        
+        
+        esp_sleep_enable_timer_wakeup(45 * 60 * 1000000ULL);
+        esp_light_sleep_start();
+        digitalWrite(TFT_BL, HIGH); // Restore backlight after wake
+        Serial.begin(115200);
+        delay(1000);
+        WiFi.mode(WIFI_STA);
+        connectWiFi();
+        wifiEnabled = true;
+        delay(2000);
+    }
        //60 minutes sleep
-        else  esp_sleep_enable_timer_wakeup(15 * 60 * 1000000ULL);
+        else  {
+        esp_sleep_enable_timer_wakeup(25 * 60 * 1000000ULL);
+        esp_light_sleep_start();
+        digitalWrite(TFT_BL, HIGH); // Restore backlight after wake
+        Serial.begin(115200);
+        delay(1000);
+        WiFi.mode(WIFI_STA);
+        connectWiFi();
+        wifiEnabled = true;
+        delay(2000);
+        }
 
        // 15 minutes deep sleep
        
-        esp_light_sleep_start();
-
-        digitalWrite(TFT_BL, HIGH); // Restore backlight after wake
+        
      // }
 
 
