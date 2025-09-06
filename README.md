@@ -1,6 +1,6 @@
 # ttgo_t_display
 
-compile with vscode + addong plugin platformfio  open this  project compile!
+compile with vscode + addon plugin platformfio  open this  project compile!
 
 TENSTAR T-Display ESP32 WiFi And Bluetooth-Compatible Module Development Board 1.14 Inch LCD Control
 
