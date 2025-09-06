@@ -13,7 +13,7 @@ esp32 ttgo_t_display news feed rss reader
 ESP32 RSS to Telegram Bot
 
 Overview
-This project runs an ESP32-based RSS-to-Telegram bot with a TFT display. It connects to Wi-Fi, fetches RSS feeds once a day at 3 AM, and uses deep sleep to save power.
+This project runs an ESP32-based RSS-to-Telegram bot with a TFT display. It connects to Wi-Fi, fetches RSS feeds once a day at 3 AM, and uses low sleep to save power.
 Hardware: ESP32, TFT display (TFT_eSPI)
 Connectivity: Wi-Fi
 Time Sync: NTP or HTTP fallback
