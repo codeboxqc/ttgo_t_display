@@ -118,9 +118,15 @@ void setup() {
 
     // Always reset to 0 on cold boot
     EEPROM.begin(4);
+    lastProcessedDay = EEPROM.read(0);
+    if (lastProcessedDay == 255) {
     lastProcessedDay = 0;
     EEPROM.write(0, lastProcessedDay);
     EEPROM.commit();
+}
+
+Serial.print("Last Processed Day: ");
+Serial.println(lastProcessedDay);
 
     pinMode(TFT_BL, OUTPUT);
     digitalWrite(TFT_BL, HIGH);
@@ -263,5 +269,6 @@ void loop() {
 
 
 }
+
 
  
